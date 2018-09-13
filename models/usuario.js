@@ -7,9 +7,7 @@ var UsuarioSchema = Schema({
     nombre: String,
     correo: String,
     celular: String,
-    pass: String,
-    autos: [{type: Schema.ObjectId, ref: 'Auto'}]
-
+    pass: String
 });
 
 module.exports = mongoose.model('Usuario', UsuarioSchema);

@@ -22,7 +22,7 @@ var LavadoSchema = Schema({
         type: String,
         enum: ['espera', 'terminado']
     },
-    cliente: {
+    usuario: {
         type: Schema.ObjectId, ref: 'Usuario'
     },
     auto: {
