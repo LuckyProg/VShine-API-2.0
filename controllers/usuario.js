@@ -27,6 +27,16 @@ function saveUser(req, res){
             user.nombre = params.nombre;
             user.correo = params.correo;
             user.celular = params.celular;
+
+            //DUPLICADOS
+            User.find({correo: user.correo.toLowerCase()}).exec((err, users) => {
+                if(err) return res.status(500).send({mensaje: 'Error en la petición de usuarios'});
+                if(users && users.length >= 1) return res.status(200).send({mensaje: 'El correo ingresado ya tiene una cuenta registrada'});
+            });
+            Auto.find({placa: params.placa.toLowerCase()}).exec((err, autos) => {
+                if(err) return res.status().send({mensaje: 'Error en la petición de autos'});
+                if(autos && autos.length >= 1) return res.status(200).send({mensaje: 'Placas ya registradas'});
+            });
             bcrypt.hash(params.pass, null, null, (err, hash) => {
                 user.pass = hash;
                 user.save((err, userStored) => {
