@@ -3,6 +3,7 @@ var bcrypt = require('bcrypt-nodejs');
 
 var User = require('../models/usuario');
 var Auto = require('../models/auto');
+var jwt = require('../services/jwt');
 
 
 function login(req, res){
@@ -17,13 +18,20 @@ function login(req, res){
         if(user){
             bcrypt.compare(pass, user.pass, (err, check) => {
                 if(check){
-                    return res.status(200).send({usuario: user});
+                    if(params.token){
+                        res.status(200).send({
+                            token: jwt.crearToken(user)
+                        });
+                    }else{
+                        user.pass = undefined;
+                        res.status(200).send({usuario: user});
+                    }
                 }else{
-                    return res.status(404).send({mensaje: 'Usuario no se ha podido identificar'});
+                    res.status(404).send({mensaje: 'Usuario no se ha podido identificar'});
                 }
             });
         }else{
-            return res.status(404).send({mensaje: 'Usuario no se ha podido identificar!!'});
+            res.status(404).send({mensaje: 'Usuario no se ha podido identificar!!'});
         }
     });
 }
