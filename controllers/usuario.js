@@ -116,7 +116,7 @@ function getUsers(req, res){
         }else if(!users){
             return res.status(404).send({mensaje: 'No hay ningún usuario registrado'});
         }else if(users && users.length >= 1){
-            return res.status(200).send({users, total, pages: Math.ci(total/itemPerPage)});
+            return res.status(200).send({users, total, pages: Math.ceil(total/itemPerPage)});
         }else{
             return res.status(404).send({mensaje: 'Página no encontrada'});
         }
@@ -137,6 +137,27 @@ function getUser(req, res){
     });
 }
 
+function editUser(req, res){
+    var userId = req.params.id;
+    var update = req.body;
+
+    //delete update.pass;
+
+    if(userId != req.user.sub){
+        return res.status(500).send({mensaje: 'Acceso denegado, usuari no válido'});
+    }else{
+        User.findOneAndUpdate(userId, update, {new: true},(err, userUpdated) => {
+            if(err){
+                return res.status(500).send({mensaje: 'Error en la petición'});
+            }else if(!userUpdated){
+                return res.status(404).send({mensaje: 'El usuario no existe'});
+            }else{
+                return res.status(200).send({user: userUpdated});
+            }
+        });
+    }
+}
+
 function prueba(req, res){
     res.status(200).send({mensaje: 'hola'});
 }
@@ -146,5 +167,6 @@ module.exports = {
     saveUser,
     prueba,
     getUsers,
-    getUser
+    getUser,
+    editUser
 }

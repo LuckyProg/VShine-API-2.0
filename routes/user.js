@@ -10,5 +10,6 @@ api.post('/register', UserController.saveUser);
 api.get('/prueba', mdauth.ensureAuth, UserController.prueba);
 api.get('/usuario/:id', mdauth.ensureAuth, UserController.getUser);
 api.get('/usuarios/:page?', mdauth.ensureAuth, UserController.getUsers);
+api.put('/updateUser/:id', mdauth.ensureAuth, UserController.editUser);
 
 module.exports = api;
