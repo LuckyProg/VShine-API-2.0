@@ -13,112 +13,139 @@ function login(req, res){
     var correo = params.correo;
     var pass = params.pass;
 
+    //Buscar usuario
     User.findOne({correo: correo}, (err, user) => {
-        if(err) return res.status(500).send({mensaje: 'Error en la petición'});
-
-        if(user){
+        if(err){
+            //Error buscar usuario
+            return res.status(500).send({mensaje: 'Error buscar usuario'});
+        }else if(user){
+            //Usuario encontrado
             bcrypt.compare(pass, user.pass, (err, check) => {
                 if(check){
+                    //Contraseña correcta
+                    
                     if(params.token){
+                        //Pide token
                         res.status(200).send({
                             token: jwt.crearToken(user)
                         });
                     }else{
+                        //No pide token
                         user.pass = undefined;
                         res.status(200).send({usuario: user});
                     }
                 }else{
-                    res.status(404).send({mensaje: 'Usuario no se ha podido identificar'});
+                    //Error datos incorrectos
+                    res.status(404).send({mensaje: 'Error datos incorrectos'});
                 }
             });
         }else{
-            res.status(404).send({mensaje: 'Usuario no se ha podido identificar!!'});
+            //Error datos incorrectos
+            res.status(404).send({mensaje: 'Error datos incorrectos'});
         }
     });
 }
 
 function saveUser(req, res){
     var params = req.body;
+    if(params.nombre && params.correo && params.celular && params.pass && params.auto){
+        
+        var autot = params.auto;
 
-    if(params.nombre && params.correo && params.celular && params.pass && params.placa && params.modelo &&  params.color && params.marca){
+        var auto = new Auto({
+            placa: autot.placa,
+            modelo: autot.modelo,
+            color: autot.color,
+            marca: autot.marca
+        });
 
-            var user = new User();
-            user.nombre = params.nombre;
-            user.correo = params.correo;
-            user.celular = params.celular;
+        var user = new User({
+            nombre: params.nombre,
+            correo: params.correo,
+            celular: params.celular
+        });
 
-            var auto = new Auto({
-                placa: params.placa,
-                modelo: params.modelo,
-                color: params.color,
-                marca: params.marca,
-            });
+        //Buscar auto
+        Auto.find({placa: auto.placa}).exec((err, autos) => {
+            if(err){
+                //Error buscar auto
+                return res.status().send({mensaje: 'Error buscar auto'});
+            }else if(autos && autos.length >= 1){
+                //Error auto duplicado
+                return res.status(200).send({mensaje: 'Error auto duplicado'});
+            }else{
+                //Auto nuevo
 
-            //DUPLICADOS
-            User.find({correo: user.correo}).exec((err, users) => {
-                if(err){
-                    return res.status(500).send({mensaje: 'Error en la petición de usuarios'});
-                }else if(users && users.length >= 1){
-                    return res.status(200).send({mensaje: 'El correo ingresado ya tiene una cuenta registrada'});
-                }else{
-                    Auto.find({placa: params.placa}).exec((err, autos) => {
-                        if(err){
-                            return res.status().send({mensaje: 'Error en la petición de autos'});
-                        }else if(autos && autos.length >= 1){
-                            
-                            return res.status(200).send({mensaje: 'Placas ya registradas'});
-                        }else{
-                            bcrypt.hash(params.pass, null, null, (err, hash) => {
-                                user.pass = hash;
-                                user.save((err, userStored) => {
-                                    if(err){
-                                        return res.status(500).send({mensaje: 'Error al guardar usuario'});
-                                    }else if(userStored){
-                                        auto.usuario = userStored._id;   
-                                        auto.save((err)=>{
-                                            if(err){
-                                                return res.status(500).send({mensaje: 'Error al guardar auto de usuario'});
-                                            }else{
-                                                return res.status(200).send({usuario: userStored});
-                                            }
-                                        });
-                                        
-                                    }else{
-                                        res.status(404).send({mensaje: 'No se ha registrado el usuario'});
-                                    }
-                                })
-                            }); 
-                        }
-                    });
-                }
-                
-                
-            });
+                //Buscar usuario
+                User.find({correo: user.correo}).exec((err, users) => {
+                    if(err){
+                        //Error buscar usuario
+                        return res.status(500).send({mensaje: 'Error buscar usuario'});
+                    }else if(users && users.length >= 1){
+                        //Error usuario duplicado
+                        return res.status(200).send({mensaje: 'Error usuario duplicado'});
+                    }else{
+                        //Usuario nuevo
+
+                        //Guardar auto
+                        auto.save((err, autoStored) => {
+                            if(err){
+                                //Error guardar auto
+                                return res.status(500).send({mensaje: 'Error guardar auto'});
+                            }else{
+                                //Auto guardado
+
+                                //Cifrar pass
+                                bcrypt.hash(params.pass, null, null, (err, hash) => {
+                                    user.pass = hash;
+                                    user.autos.push(autoStored._id);
+                                    //Guardar usuario
+                                    user.save((err, userStored) => {
+                                        if(err){
+                                            //Error guardar usuario
+                                            return res.status(500).send({mensaje: 'Error al guardar usuario'});
+                                        }else{
+                                            //Usuario guardado
+                                            return res.status(200).send({
+                                                usuario: userStored
+                                            });
+                                        }
+                                    });;
+                                }); 
+                                
+                            }
+                        });
+                        
+                    }                  
+                });  
+            }
+        });   
     }else{
         res.status(200).send({ mensaje: 'Datos incompletos para registrar usuario'});
     }
-
-
 }
 
 function getUsers(req, res){
-    console.log(1);
     var identity_user_id = req.user.sub;
-    console.log(2);
     var page = 1;
     if(req.params.page){
         page = req.params.page;
     }
     var itemPerPage = 5;
+    //Buscar usuarios
     User.find().sort('_id').paginate(page, itemPerPage, (err, users, total) => {
         if(err){
-            return res.status(500).send({mensaje: 'Error en la petición'});
+            //Error buscar usuarios
+            return res.status(500).send({mensaje: 'Error buscar usuarios'});
         }else if(!users){
-            return res.status(404).send({mensaje: 'No hay ningún usuario registrado'});
+            //Error no hay usuarios
+            return res.status(404).send({mensaje: 'Error no hay usuarios'});
         }else if(users && users.length >= 1){
+            //Usuarios encontrados y paginados
             return res.status(200).send({users, total, pages: Math.ceil(total/itemPerPage)});
         }else{
-            return res.status(404).send({mensaje: 'Página no encontrada'});
+            //Error pagina no encontrada
+            return res.status(404).send({mensaje: 'Error pagina no encontrada'});
         }
     });
 }
@@ -126,12 +153,16 @@ function getUsers(req, res){
 function getUser(req, res){
     var userId = req.params.id;
 
+    //Buscar usuario
     User.findById(userId, (err, user) => {
         if(err){
-            return res.status(500).send({err});
+            //Error buscando usuario
+            return res.status(500).send({mensaje: 'Error buscando usuario'});
         }else if(!user){
-            return res.status(404).send({mensaje: 'El usuario no existe'});
+            //Error usuario no existe
+            return res.status(404).send({mensaje: 'Error usuario no existe'});
         }else{
+            //Usuario encontrado
             return res.status(200).send({user});
         }
     });
@@ -140,18 +171,24 @@ function getUser(req, res){
 function editUser(req, res){
     var userId = req.params.id;
     var update = req.body;
-
-    //delete update.pass;
-
-    if(userId != req.user.sub){
-        return res.status(500).send({mensaje: 'Acceso denegado, usuari no válido'});
+    //Prevee acualizar pass para hacerlo en otro método
+    delete update.autos;
+    delete update.pass;
+    if(userId != req.user.id){
+        //Error usuario denegado
+        return res.status(500).send({mensaje: 'Error usuario denegado'});
     }else{
+        //Buscar y actualizar
         User.findOneAndUpdate(userId, update, {new: true},(err, userUpdated) => {
             if(err){
-                return res.status(500).send({mensaje: 'Error en la petición'});
+                //Error actualizaar usuario
+                return res.status(500).send({mensaje: 'Error actualizar usuario'});
             }else if(!userUpdated){
-                return res.status(404).send({mensaje: 'El usuario no existe'});
+                //Error usuario no actualizado
+                return res.status(404).send({mensaje: 'Error usuario no actualizado'});
             }else{
+                //Usuario actualizado
+                userUpdated.pass = undefined;
                 return res.status(200).send({user: userUpdated});
             }
         });
