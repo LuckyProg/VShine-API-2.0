@@ -126,7 +126,6 @@ function saveUser(req, res){
 }
 
 function getUsers(req, res){
-    var identity_user_id = req.user.sub;
     var page = 1;
     if(req.params.page){
         page = req.params.page;
@@ -193,6 +192,11 @@ function editUser(req, res){
             }
         });
     }
+}
+
+function deleteUser(req, res){
+    var userId = req.user.id;
+    var userIdEliminar
 }
 
 function prueba(req, res){
