@@ -1,5 +1,6 @@
 'use strict'
 var bcrypt = require('bcrypt-nodejs');
+var mongoose_paginate = require('mongoose-pagination');
 
 var User = require('../models/usuario');
 var Auto = require('../models/auto');
@@ -56,29 +57,29 @@ function saveUser(req, res){
             //DUPLICADOS
             User.find({correo: user.correo}).exec((err, users) => {
                 if(err){
-                    res.status(500).send({mensaje: 'Error en la petición de usuarios'});
+                    return res.status(500).send({mensaje: 'Error en la petición de usuarios'});
                 }else if(users && users.length >= 1){
-                    res.status(200).send({mensaje: 'El correo ingresado ya tiene una cuenta registrada'});
+                    return res.status(200).send({mensaje: 'El correo ingresado ya tiene una cuenta registrada'});
                 }else{
                     Auto.find({placa: params.placa}).exec((err, autos) => {
                         if(err){
-                            res.status().send({mensaje: 'Error en la petición de autos'});
+                            return res.status().send({mensaje: 'Error en la petición de autos'});
                         }else if(autos && autos.length >= 1){
                             
-                            res.status(200).send({mensaje: 'Placas ya registradas'});
+                            return res.status(200).send({mensaje: 'Placas ya registradas'});
                         }else{
                             bcrypt.hash(params.pass, null, null, (err, hash) => {
                                 user.pass = hash;
                                 user.save((err, userStored) => {
                                     if(err){
-                                        res.status(500).send({mensaje: 'Error al guardar usuario'});
+                                        return res.status(500).send({mensaje: 'Error al guardar usuario'});
                                     }else if(userStored){
                                         auto.usuario = userStored._id;   
                                         auto.save((err)=>{
                                             if(err){
-                                                res.status(500).send({mensaje: 'Error al guardar auto de usuario'});
+                                                return res.status(500).send({mensaje: 'Error al guardar auto de usuario'});
                                             }else{
-                                                res.status(200).send({usuario: userStored});
+                                                return res.status(200).send({usuario: userStored});
                                             }
                                         });
                                         
@@ -93,8 +94,6 @@ function saveUser(req, res){
                 
                 
             });
-
-
     }else{
         res.status(200).send({ mensaje: 'Datos incompletos para registrar usuario'});
     }
@@ -102,7 +101,50 @@ function saveUser(req, res){
 
 }
 
+function getUsers(req, res){
+    console.log(1);
+    var identity_user_id = req.user.sub;
+    console.log(2);
+    var page = 1;
+    if(req.params.page){
+        page = req.params.page;
+    }
+    var itemPerPage = 5;
+    User.find().sort('_id').paginate(page, itemPerPage, (err, users, total) => {
+        if(err){
+            return res.status(500).send({mensaje: 'Error en la petición'});
+        }else if(!users){
+            return res.status(404).send({mensaje: 'No hay ningún usuario registrado'});
+        }else if(users && users.length >= 1){
+            return res.status(200).send({users, total, pages: Math.ci(total/itemPerPage)});
+        }else{
+            return res.status(404).send({mensaje: 'Página no encontrada'});
+        }
+    });
+}
+
+function getUser(req, res){
+    var userId = req.params.id;
+
+    User.findById(userId, (err, user) => {
+        if(err){
+            return res.status(500).send({err});
+        }else if(!user){
+            return res.status(404).send({mensaje: 'El usuario no existe'});
+        }else{
+            return res.status(200).send({user});
+        }
+    });
+}
+
+function prueba(req, res){
+    res.status(200).send({mensaje: 'hola'});
+}
+
 module.exports = {
     login,
-    saveUser
+    saveUser,
+    prueba,
+    getUsers,
+    getUser
 }
