@@ -194,10 +194,12 @@ function editUser(req, res){
     }
 }
 
-function deleteUser(req, res){
-    var userId = req.user.id;
-    var userIdEliminar
-}
+// function deleteUser(req, res){
+//     var userId = req.user.id;
+//     var userIdEliminar = req.params.id;
+
+//     Usuario.findOne().
+// }
 
 function prueba(req, res){
     res.status(200).send({mensaje: 'hola'});
