@@ -47,23 +47,23 @@ function login(req, res){
 }
 
 function saveUser(req, res){
-    console.log(req.body);
     var params = req.body;
-    if(params.nombre && params.correo && params.celular && params.pass && params.auto){
+    if(params.nombre && params.correo && params.celular && params.pass && params.placa && params.modelo && params.color && params.marca){
         
-        var autot = params.auto;
 
         var auto = new Auto({
-            placa: autot.placa,
-            modelo: autot.modelo,
-            color: autot.color,
-            marca: autot.marca
+            placa: params.placa,
+            modelo: params.modelo,
+            color: params.color,
+            marca: params.marca
         });
 
         var user = new User({
             nombre: params.nombre,
             correo: params.correo,
-            celular: params.celular
+            celular: params.celular,
+            role: "usuario",
+            activo: true
         });
 
         //Buscar auto
@@ -125,57 +125,69 @@ function saveUser(req, res){
 }
 
 function getUsers(req, res){
-    var page = 1;
-    if(req.params.page){
-        page = req.params.page;
-    }
-    var itemPerPage = 5;
-    //Buscar usuarios
-    User.find().sort('_id').paginate(page, itemPerPage, (err, users, total) => {
-        if(err){
-            //Error buscar usuarios
-            return res.status(500).send({mensaje: 'Error buscar usuarios'});
-        }else if(!users){
-            //Error no hay usuarios
-            return res.status(404).send({mensaje: 'Error no hay usuarios'});
-        }else if(users && users.length >= 1){
-            //Usuarios encontrados y paginados
-            return res.status(200).send({users, total, pages: Math.ceil(total/itemPerPage)});
-        }else{
-            //Error pagina no encontrada
-            return res.status(404).send({mensaje: 'Error pagina no encontrada'});
+
+    if(req.user.role != 'admin'){
+        return res.status(500).send({mensaje: 'Acceso Denegado'});
+    }else{
+        var page = 1;
+        if(req.params.page){
+            page = req.params.page;
         }
-    });
+
+        var itemPerPage = 5;
+        //Buscar usuarios
+        User.find().select('nombre role correo celular activo').sort('_id').paginate(page, itemPerPage, (err, users, total) => {
+            if(err){
+                //Error buscar usuarios
+                return res.status(500).send({mensaje: 'Error buscar usuarios'});
+            }else if(!users){
+                //Error no hay usuarios
+                return res.status(404).send({mensaje: 'Error no hay usuarios'});
+            }else if(users && users.length >= 1){
+                //Usuarios encontrados y paginados
+                return res.status(200).send({users, total, pages: Math.ceil(total/itemPerPage)});
+            }else{
+                //Error pagina no encontrada
+                return res.status(404).send({mensaje: 'Error pagina no encontrada'});
+            }
+        });
+    }
+    
 }
 
 function getUser(req, res){
     var userId = req.params.id;
-
-    //Buscar usuario
-    User.findById(userId, (err, user) => {
-        if(err){
-            //Error buscando usuario
-            return res.status(500).send({mensaje: 'Error buscando usuario'});
-        }else if(!user){
-            //Error usuario no existe
-            return res.status(404).send({mensaje: 'Error usuario no existe'});
-        }else{
-            //Usuario encontrado
-            return res.status(200).send({user});
-        }
-    });
+    
+    if(req.user.sub_id == req.params.id || req.user.role == 'admin'){
+        //Buscar usuario
+        User.findById(userId, (err, user) => {
+            if(err){
+                //Error buscando usuario
+                return res.status(500).send({mensaje: 'Error buscando usuario'});
+            }else if(!user){
+                //Error usuario no existe
+                return res.status(404).send({mensaje: 'Error usuario no existe'});
+            }else{
+                //Usuario encontrado
+                return res.status(200).send({user});
+            }
+        });
+    }else{
+        return res.status(500).send({mensaje: 'Acceso Denegado'});
+    }
+    
 }
 
 function editUser(req, res){
-    var userId = req.params.id;
-    var update = req.body;
-    //Prevee acualizar pass para hacerlo en otro método
-    delete update.autos;
-    delete update.pass;
-    if(userId != req.user.id){
-        //Error usuario denegado
-        return res.status(500).send({mensaje: 'Error usuario denegado'});
-    }else{
+
+    if(req.user.sub_id == req.params.id || req.user.role == 'admin'){
+        var userId = req.params.id;
+        var update = req.body;
+        //Prevee acualizar pass para hacerlo en otro método
+        delete update.pass;
+        delete update.activo;
+        delete update.role;
+
         //Buscar y actualizar
         User.findOneAndUpdate(userId, update, {new: true},(err, userUpdated) => {
             if(err){
@@ -190,15 +202,42 @@ function editUser(req, res){
                 return res.status(200).send({user: userUpdated});
             }
         });
+        
+    }else{
+        return res.status(500).send({mensaje: 'Acceso Denegado'});
     }
+
+    
 }
 
-// function deleteUser(req, res){
-//     var userId = req.user.id;
-//     var userIdEliminar = req.params.id;
+function deleteUser(req, res){
+    if(req.user.sub_id == req.params.id || req.user.role == 'admin'){
+        var userId = req.params.id;
 
-//     Usuario.findOne().
-// }
+        var update = {
+            activo: false
+        };
+        
+
+        //Buscar y actualizar
+        User.findOneAndUpdate(userId, update, {new: true},(err, userUpdated) => {
+            if(err){
+                //Error actualizaar usuario
+                return res.status(500).send({mensaje: 'Error actualizar usuario'});
+            }else if(!userUpdated){
+                //Error usuario no actualizado
+                return res.status(404).send({mensaje: 'Error usuario no actualizado'});
+            }else{
+                //Usuario actualizado
+                userUpdated.pass = undefined;
+                return res.status(200).send({user: userUpdated});
+            }
+        });
+        
+    }else{
+        return res.status(500).send({mensaje: 'Acceso Denegado'});
+    }
+}
 
 function prueba(req, res){
     res.status(200).send({mensaje: 'hola'});
@@ -210,5 +249,6 @@ module.exports = {
     prueba,
     getUsers,
     getUser,
-    editUser
+    editUser,
+    deleteUser
 }

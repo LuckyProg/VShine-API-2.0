@@ -6,11 +6,11 @@ var secret = '01123581321';
 
 exports.crearToken = function(user){
     var payload = {
-        id: user._id,
+        sub_id: user._id,
         nombre: user.nombre,
         correo: user.correo,
         celular: user.celular,
-        autos: user.autos,
+        role: user.role,
         creacion: moment().unix(),
         expiracion: moment().add(30, 'days').unix
     };
