@@ -8,7 +8,7 @@ var UsuarioSchema = Schema({
     correo: String,
     celular: String,
     pass: String,
-    autos: [{type: Schema.ObjectId, ref: 'Usuario'}]
+    activo: Boolean
 
 });
 

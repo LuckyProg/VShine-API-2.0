@@ -7,7 +7,10 @@ var AutoSchema = Schema({
     placa: String,
     modelo: String,
     color: String,
-    marca: String
+    marca: String,
+    enlavado: Boolean,
+    usuario: {type: Schema.ObjectId, ref: 'Usuario'},
+    activo: Boolean
 });
 
 module.exports = mongoose.model('Auto', AutoSchema);

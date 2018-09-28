@@ -47,6 +47,7 @@ function login(req, res){
 }
 
 function saveUser(req, res){
+    console.log(req.body);
     var params = req.body;
     if(params.nombre && params.correo && params.celular && params.pass && params.auto){
         
@@ -86,36 +87,34 @@ function saveUser(req, res){
                         return res.status(200).send({mensaje: 'Error usuario duplicado'});
                     }else{
                         //Usuario nuevo
-
-                        //Guardar auto
-                        auto.save((err, autoStored) => {
-                            if(err){
-                                //Error guardar auto
-                                return res.status(500).send({mensaje: 'Error guardar auto'});
-                            }else{
-                                //Auto guardado
-
-                                //Cifrar pass
-                                bcrypt.hash(params.pass, null, null, (err, hash) => {
-                                    user.pass = hash;
-                                    user.autos.push(autoStored._id);
-                                    //Guardar usuario
-                                    user.save((err, userStored) => {
+                        //Cifrar pass
+                        bcrypt.hash(params.pass, null, null, (err, hash) => {
+                            user.pass = hash;
+                            //Guardar usuario
+                            user.save((err, userStored) => {
+                                if(err){
+                                    //Error guardar usuario
+                                    return res.status(500).send({mensaje: 'Error al guardar usuario'});
+                                }else{
+                                    //Usuario guardado
+                                    auto.usuario = userStored._id;
+                                    //Guardar auto
+                                    auto.save((err, autoStored) => {
                                         if(err){
-                                            //Error guardar usuario
-                                            return res.status(500).send({mensaje: 'Error al guardar usuario'});
+                                            //Error guardar auto
+                                            return res.status(500).send({mensaje: 'Error guardar auto'});
                                         }else{
-                                            //Usuario guardado
+                                            //Auto guardado
                                             return res.status(200).send({
-                                                usuario: userStored
+                                                usuario: userStored,
+                                                auto: autoStored
                                             });
+                                            
                                         }
-                                    });;
-                                }); 
-                                
-                            }
-                        });
-                        
+                                    });
+                                }
+                            });;
+                        });                   
                     }                  
                 });  
             }

@@ -10,18 +10,9 @@ var LavadoSchema = Schema({
         longitud: Number
     },
     fecha: Date,
-    tipo: {
-        type: String,
-        enum: ['express', 'plus', 'pro', 'premium']
-    },
-    pago: {
-        type: String,
-        enum: ['tarjeta', 'efectivo']
-    },
-    estado: {
-        type: String,
-        enum: ['espera', 'terminado']
-    },
+    tipo: String,
+    pago: String,
+    estado: String,
     usuario: {type: Schema.ObjectId, ref: 'Usuario'},
     auto: {type: Schema.ObjectId, ref: 'Auto' }
 
