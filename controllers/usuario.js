@@ -55,7 +55,9 @@ function saveUser(req, res){
             placa: params.placa,
             modelo: params.modelo,
             color: params.color,
-            marca: params.marca
+            marca: params.marca,
+            enlavado: false,
+            activo: true
         });
 
         var user = new User({
@@ -70,9 +72,9 @@ function saveUser(req, res){
         Auto.find({placa: auto.placa}).exec((err, autos) => {
             if(err){
                 //Error buscar auto
-                return res.status().send({mensaje: 'Error buscar auto'});
+                return res.status(404).send({mensaje: 'Error buscar auto'});
             }else if(autos && autos.length >= 1){
-                //Error auto duplicado
+                //Error     uplicado
                 return res.status(200).send({mensaje: 'Error auto duplicado'});
             }else{
                 //Auto nuevo
@@ -105,6 +107,12 @@ function saveUser(req, res){
                                             return res.status(500).send({mensaje: 'Error guardar auto'});
                                         }else{
                                             //Auto guardado
+                                            userStored.pass = undefined;
+                                            userStored.__v = undefined;
+                                            userStored.activo = undefined;
+                                            auto.__v = undefined;
+                                            auto.enlavado = undefined;
+                                            auto.activo = undefined;
                                             return res.status(200).send({
                                                 usuario: userStored,
                                                 auto: autoStored
@@ -169,6 +177,7 @@ function getUser(req, res){
                 return res.status(404).send({mensaje: 'Error usuario no existe'});
             }else{
                 //Usuario encontrado
+                user.pass = undefined;
                 return res.status(200).send({user});
             }
         });
