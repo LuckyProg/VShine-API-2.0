@@ -27,7 +27,6 @@ function registerAuto(req, res){
                     if(err){
                         return res.status(404).send({mensaje: 'Error al buscar duplicados'});
                     }else if(autos && autos.length >= 1){
-                        console.log('hey');
                         return res.status(200).send({mensaje: 'Placa en uso'});
                     }else{
                         Usuario.findById(usuarioId, (err, userfound)=>{
@@ -67,8 +66,21 @@ function registerAuto(req, res){
 
 }
 
-function updateAuto(){
-
+function editAuto(req, res){
+    if(req.user.sub_id == req.params.id || req.user.role == 'admin'){
+        var userId = req.params.id;
+        var update = req.body;
+        //no permitir cambio de
+        delete update.estado;
+        delete update.usuario;
+    if(9){
+        
+    }
+    }
+    
+    //validar permiso de usuario
+    //validar si existe auto
+    //validar que auto no tengo lavado en curso 
 }
 
 function deleteAuto(){
